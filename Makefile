@@ -1,11 +1,23 @@
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
-ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM)
+# BlocksDS / Wonderful Toolchain. Tools are called by explicit path, never by
+# bare name, so that nothing is picked up from a devkitPro installation.
+#---------------------------------------------------------------------------------
+export BLOCKSDS				?=	/opt/blocksds/core
+export WONDERFUL_TOOLCHAIN	?=	/opt/wonderful
+
+ifeq ($(wildcard $(BLOCKSDS)/libs/libnds/include/nds.h),)
+$(error "BlocksDS libnds headers not found under BLOCKSDS=$(BLOCKSDS). Build from the Wonderful Toolchain shell or set BLOCKSDS)
 endif
 
--include $(DEVKITARM)/ds_rules
+PREFIX	:=	$(WONDERFUL_TOOLCHAIN)/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-
+
+ifeq ($(VERBOSE),1)
+V		:=
+else
+V		:=	@
+endif
 
 #---------------------------------------------------------------------------------
 # BUILD is the directory where object files & intermediate files will be placed
@@ -23,15 +35,15 @@ SPECS		:=  specs
 #---------------------------------------------------------------------------------
 ARCH	:=	-mthumb -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -Os\
+CFLAGS	:=	-g -Wall -Os -std=gnu17\
 			-mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer\
 			-ffast-math \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) $(EXTRA_CFLAGS) -DARM7
+CFLAGS	+=	$(INCLUDE) $(EXTRA_CFLAGS) -DARM7 -D__NDS__
 
 ASFLAGS	:=	-g $(ARCH) $(EXTRA_CFLAGS) $(INCLUDE)
-LDFLAGS	=	-nostartfiles -T $(TOPDIR)/load.ld -Wl,--no-warn-rwx-segments -g $(ARCH) -Wl,-Map,$(TARGET).map
+LDFLAGS	=	-nostartfiles -T $(TOPDIR)/load.ld -Wl,--no-warn-rwx-segments -Wl,-z,noexecstack -g $(ARCH) -Wl,-Map,$(TARGET).map
 
 LIBS	:= 
 
@@ -39,7 +51,7 @@ LIBS	:=
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:=	$(LIBNDS)
+LIBDIRS	:=	$(BLOCKSDS)/libs/libnds
  
   
 #---------------------------------------------------------------------------------
@@ -96,18 +108,31 @@ clean:
 else
  
 DEPENDS	:=	$(OFILES:.o=.d)
+
+#---------------------------------------------------------------------------------
+# compile rules (previously provided by devkitARM's base_rules)
+#---------------------------------------------------------------------------------
+%.arm.o: CFLAGS += -marm
+
+%.o: %.c
+	@echo $(notdir $<)
+	$(V)$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d $(CFLAGS) -c $< -o $@
+
+%.o: %.s
+	@echo $(notdir $<)
+	$(V)$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@
  
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
 $(LOADBIN)	:	$(LOADELF)
-	@$(OBJCOPY) -O binary $< $@
+	$(V)$(OBJCOPY) -O binary $< $@
 	@echo built ... $(notdir $@)
 
 
 $(LOADELF)	: $(OFILES)
 	@echo linking $(notdir $@)
-	@$(LD)  $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+	$(V)$(LD)  $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 
 arm9mpu_reset.o: mpu_reset.bin
 
