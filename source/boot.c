@@ -254,9 +254,7 @@ void loadBinary_ARM7 (u32 fileCluster)
 	// the ARM9 start address, so as not to start it
 	TEMP_ARM9_START_ADDRESS = ndsHeader[0x024>>2];		// Store for later
 	ndsHeader[0x024>>2] = 0;
-	// Open-coded dmaCopyWords(3, ndsHeader, NDS_HEAD, 0x170): the same register
-	// writes as the legacy libnds inline. BlocksDS's inline calls dmaSetParams(),
-	// which lives in libnds, and the bootloader does not link libnds.
+	// dmaCopyWords() needs libnds on BlocksDS
 	DMA_SRC(3) = (u32)ndsHeader;
 	DMA_DEST(3) = (u32)NDS_HEAD;
 	DMA_CR(3) = DMA_COPY_WORDS | (0x170>>2);

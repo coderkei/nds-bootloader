@@ -1,9 +1,6 @@
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
-# BlocksDS / Wonderful Toolchain. Tools are called by explicit path, never by
-# bare name, so that nothing is picked up from a devkitPro installation.
-#---------------------------------------------------------------------------------
 export BLOCKSDS				?=	/opt/blocksds/core
 export WONDERFUL_TOOLCHAIN	?=	/opt/wonderful
 
@@ -110,7 +107,7 @@ else
 DEPENDS	:=	$(OFILES:.o=.d)
 
 #---------------------------------------------------------------------------------
-# compile rules (previously provided by devkitARM's base_rules)
+# compile rules
 #---------------------------------------------------------------------------------
 %.arm.o: CFLAGS += -marm
 
