@@ -254,7 +254,6 @@ void loadBinary_ARM7 (u32 fileCluster)
 	// the ARM9 start address, so as not to start it
 	TEMP_ARM9_START_ADDRESS = ndsHeader[0x024>>2];		// Store for later
 	ndsHeader[0x024>>2] = 0;
-	// dmaCopyWords() needs libnds on BlocksDS
 	DMA_SRC(3) = (u32)ndsHeader;
 	DMA_DEST(3) = (u32)NDS_HEAD;
 	DMA_CR(3) = DMA_COPY_WORDS | (0x170>>2);
